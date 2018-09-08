@@ -128,7 +128,7 @@ int BATT_SMBUS::block_read(const uint8_t cmd_code, void *data, const unsigned le
 int BATT_SMBUS::block_write(const uint8_t cmd_code, void *data, const unsigned byte_count)
 {
 	// cmd code, byte count, data[byte_count], pec
-	uint8_t buf[byte_count + 2];
+	uint8_t buf[byte_count + 3];
 
 	buf[0] = cmd_code;
 	buf[1] = (uint8_t)byte_count;
@@ -137,18 +137,10 @@ int BATT_SMBUS::block_write(const uint8_t cmd_code, void *data, const unsigned b
 	uint8_t pec = get_pec(buf, sizeof(buf));
 	buf[byte_count + 2] = pec;
 
-	unsigned i = 0;
-
-	// If block_write fails, try up to 10 times.
-	while (i < 10) {
-		if (PX4_OK != _interface->write(0, buf, sizeof(buf))) {
-			i++;
-			PX4_WARN("block_write failed: %d", i);
-			usleep(100000);
-
-		} else {
-			return PX4_OK;
-		}
+        if (PX4_OK != _interface->write(0, buf, sizeof(buf))) {
+		return PX4_ERROR;
+	} else {
+		return PX4_OK;
 	}
 
 	return PX4_ERROR;
